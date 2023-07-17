@@ -25,7 +25,7 @@ export class FakeCommerce {
   Country: string;
   CustomerID: string;
   Description: string;
-  InvoiceDate: Date;
+  InvoiceDate: string;
   InvoiceNo: string;
   Quantity: number;
   StockCode: string;

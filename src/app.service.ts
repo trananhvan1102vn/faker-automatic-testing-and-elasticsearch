@@ -51,7 +51,7 @@ export class AppService {
       Country: faker.address.country(),
       CustomerID: faker.database.mongodbObjectId(),
       Description: faker.commerce.productDescription(),
-      InvoiceDate: faker.date.past(1, new Date()),
+      InvoiceDate: String(Date.parse(String(faker.date.past(1, new Date())))),
       InvoiceNo: faker.database.mongodbObjectId(),
       Quantity: Number(faker.random.numeric()),
       StockCode: faker.database.mongodbObjectId(),
@@ -66,7 +66,29 @@ export class AppService {
     // return { ...[{ index: {} }, newCommerce] };
   }
 
-  async bulkDataToElasticsearch(dataset: any) {
+  createRandomCountryData() {
+    const newCommerce = {
+      ProductId: faker.database.mongodbObjectId(),
+      Country: faker.address.country(),
+      FactoryNumber: Number(faker.random.numeric()),
+    };
+    return newCommerce;
+    // return { ...[{ index: {} }, newCommerce] };
+  }
+
+  genMultipleFakeEvent = (n: number) =>
+    faker.helpers.uniqueArray(this.createRandomEvent, n ? n : 5);
+
+  genMultipleFakeConference = (n: number) =>
+    faker.helpers.uniqueArray(this.createRandomConference, n ? n : 5);
+
+  genMultipleFakeCommerceData = (n: number) =>
+    faker.helpers.uniqueArray(this.createRandomCommerceData, n ? n : 5);
+
+  genMultipleFakeCountryData = (n: number) =>
+    faker.helpers.uniqueArray(this.createRandomCountryData, n ? n : 5);
+
+  async bulkDataToElasticsearch(index_name: string, dataset: any) {
     console.log(this.ELASTICSEARCH_NODE, this.APIKEY);
     const client = new Client({
       node: this.ELASTICSEARCH_NODE,
@@ -85,10 +107,15 @@ export class AppService {
       .catch((error) => console.error(error));
 
     const operations = dataset.flatMap((doc) => [
-      { index: { _index: 'commerce' } },
+      { create: { _index: index_name } },
+      // { index: { _index: index_name } },
       doc,
     ]);
-    const bulkResponse = await client.bulk({ refresh: true, operations });
+
+    const bulkResponse = await client.bulk({
+      refresh: true,
+      operations,
+    });
 
     if (bulkResponse.errors) {
       const erroredDocuments = [];
@@ -112,17 +139,8 @@ export class AppService {
       console.log(erroredDocuments);
     }
 
-    const count = await client.count({ index: 'commerce' });
+    const count = await client.count({ index: index_name });
     console.log(count);
     return bulkResponse;
   }
-
-  genMultipleFakeEvent = (n: number) =>
-    faker.helpers.uniqueArray(this.createRandomEvent, n ? n : 5);
-
-  genMultipleFakeConference = (n: number) =>
-    faker.helpers.uniqueArray(this.createRandomConference, n ? n : 5);
-
-  genMultipleFakeCommerceData = (n: number) =>
-    faker.helpers.uniqueArray(this.createRandomCommerceData, n ? n : 5);
 }

@@ -1,4 +1,10 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { ConfigService } from '@nestjs/config';
 
@@ -33,6 +39,18 @@ export class AppController {
   @Get('data/commerce')
   async genFakeCommerceData(@Query() { amount }) {
     const dataset = this.appService.genMultipleFakeCommerceData(amount);
-    return await this.appService.bulkDataToElasticsearch(dataset);
+    // return dataset;
+    return await this.appService.bulkDataToElasticsearch('commerce', dataset);
+  }
+
+  @Post('elasticsearch/bulk')
+  async bulkDataToElastic(@Query() query) {
+    if (!query?.index_name || !query?.amount)
+      throw new BadRequestException('missing index_name or amount');
+    const dataset = this.appService.genMultipleFakeCommerceData(query?.amount);
+    return await this.appService.bulkDataToElasticsearch(
+      query?.index_name,
+      dataset,
+    );
   }
 }
